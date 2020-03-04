@@ -37,7 +37,7 @@ def get_model():
     img_1 = MaxPool1D(pool_size=2)(img_1)
     img_1 = Dropout(rate=0.1)(img_1)
     img_1 = Convolution1D(256, kernel_size=3, activation=activations.relu, padding="valid")(img_1)
-    img_1 = Convolution1D(256, kernel_size=3, activation=activations.relu, padding="valid")(img_1)
+    img_1 = Convolution1D(256, kernel_size=3, activation=activations.relu, padding="valid", name="final_conv")(img_1)
     img_1 = GlobalMaxPool1D()(img_1)
     img_1 = Dropout(rate=0.2)(img_1)
 
