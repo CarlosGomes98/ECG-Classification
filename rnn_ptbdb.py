@@ -28,14 +28,13 @@ print(X.shape, Y.shape)
 def get_model():
     nclass = 1
     inp = Input(shape=(187, 1))
-    img_1 = LSTM(32, dropout=0.2, return_sequences=False)(inp)
-    # img_1 = LSTM(64, dropout=0.2)(img_1)
-    
-    dense_1 = Dense(32, activation=activations.relu, name="dense_1")(img_1)
-    dense_1 = Dense(nclass, activation=activations.sigmoid, name="dense_3_ptbdb")(dense_1)
+    img_1 = LSTM(128, dropout=0.2, return_sequences=False)(inp)
+    # img_1 = LSTM(128, dropout=0.2)(img_1)
+
+    dense_1 = Dense(nclass, activation=activations.sigmoid, name="dense_3_ptbdb")(img_1)
 
     model = models.Model(inputs=inp, outputs=dense_1)
-    opt = optimizers.Adam(0.001)
+    opt = optimizers.Adam()
 
     model.compile(optimizer=opt, loss=losses.binary_crossentropy, metrics=['acc'])
     model.summary()
@@ -44,11 +43,11 @@ def get_model():
 model = get_model()
 file_path = "lstm_ptbdb.h5"
 checkpoint = ModelCheckpoint(file_path, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
-early = EarlyStopping(monitor="val_acc", mode="max", patience=5, verbose=1)
-redonplat = ReduceLROnPlateau(monitor="val_acc", mode="max", patience=3, verbose=2)
+early = EarlyStopping(monitor="val_acc", mode="max", patience=10, verbose=1)
+redonplat = ReduceLROnPlateau(monitor="val_acc", mode="max", patience=5, verbose=2)
 callbacks_list = [checkpoint, early, redonplat]  # early
 
-model.fit(X, Y, epochs=1000, verbose=2, callbacks=callbacks_list, validation_split=0.1)
+model.fit(X, Y, epochs=1000, verbose=2, callbacks=callbacks_list, validation_split=0.1, batch_size=32)
 model.load_weights(file_path)
 
 pred_test = model.predict(X_test)
