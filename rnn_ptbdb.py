@@ -19,19 +19,19 @@ df_train, df_test = train_test_split(df, test_size=0.2, random_state=1337, strat
 
 
 Y = np.array(df_train[187].values).astype(np.int8)
-X = np.array(df_train[list(range(187))].values)[:, np.newaxis, :]
+X = np.array(df_train[list(range(187))].values)[..., np.newaxis]
 
 Y_test = np.array(df_test[187].values).astype(np.int8)
-X_test = np.array(df_test[list(range(187))].values)[:, np.newaxis, :]
+X_test = np.array(df_test[list(range(187))].values)[..., np.newaxis]
 
 print(X.shape, Y.shape)
 def get_model():
     nclass = 1
-    inp = Input(shape=(1, 187))
-    img_1 = LSTM(128, dropout=0.2, return_sequences=True)(inp)
-    img_1 = LSTM(64, dropout=0.2)(img_1)
+    inp = Input(shape=(187, 1))
+    img_1 = LSTM(32, dropout=0.2, return_sequences=False)(inp)
+    # img_1 = LSTM(64, dropout=0.2)(img_1)
     
-    dense_1 = Dense(64, activation=activations.relu, name="dense_1")(img_1)
+    dense_1 = Dense(32, activation=activations.relu, name="dense_1")(img_1)
     dense_1 = Dense(nclass, activation=activations.sigmoid, name="dense_3_ptbdb")(dense_1)
 
     model = models.Model(inputs=inp, outputs=dense_1)
