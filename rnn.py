@@ -1,3 +1,5 @@
+# Test f1 score : 0.8985821037563442
+# Test accuracy score : 0.9828247761739448
 import pandas as pd
 import numpy as np
 
@@ -12,7 +14,7 @@ import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
-from tensorflow.keras.layers import LSTM
+from tensorflow.keras.layers import LSTM, GRU
 from tensorflow.keras.models import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, ReduceLROnPlateau
 
@@ -44,16 +46,19 @@ seq_len = 187
 def get_model():
     n_class = 5
     model = Sequential()
-    model.add(LSTM(128, 
+    model.add(GRU(128, 
                    input_shape=(seq_len, 1),
                    return_sequences=True,
                    dropout=0.2))
-    # model.add(LSTM(128,
-    #                return_sequences=False, 
-    #                dropout=0.2))
+    model.add(GRU(128,
+                   return_sequences=False, 
+                   dropout=0.2))
+    model.add(GRU(128,
+                   return_sequences=False, 
+                   dropout=0.2))
     
-    # model.add(Dense(32, activation='relu'))
-    # model.add(Dropout(0.2))
+    model.add(Dense(64, activation='relu'))
+    model.add(Dropout(0.2))
     model.add(Dense(n_class, activation='softmax'))
     
     opt = tf.keras.optimizers.Adam(lr=0.001)
@@ -69,17 +74,17 @@ model = get_model()
 model.summary()
 
 file_path = "rnn_mitbih_andrej.h5"
-checkpoint = ModelCheckpoint(file_path, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
-early = EarlyStopping(monitor="val_acc", mode="max", patience=5, verbose=1)
-redonplat = ReduceLROnPlateau(monitor="val_acc", mode="max", patience=3, verbose=2)
+checkpoint = ModelCheckpoint(file_path, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
+early = EarlyStopping(monitor="val_accuracy", mode="max", patience=5, verbose=1)
+redonplat = ReduceLROnPlateau(monitor="val_accuracy", mode="max", patience=3, verbose=2)
 callbacks_list = [checkpoint, early, redonplat]  # early
 
-model.fit(X, Y, 
+model.fit(X, Y,
           epochs=1000, 
           verbose=1,
           batch_size=64,
           validation_split=0.1,
-        # sample_weight=sample_weights,
+         # sample_weight=sample_weights,
           callbacks=callbacks_list)
 
 pred_test = model.predict(X_test)
@@ -92,4 +97,3 @@ print("Test f1 score : %s "% f1)
 acc = accuracy_score(Y_test, pred_test)
 
 print("Test accuracy score : %s "% acc)
-
