@@ -1,13 +1,13 @@
-# from https://raw.githubusercontent.com/CVxTz/ECG_Heartbeat_Classification/master/code/baseline_ptbdb.py
-# Test f1 score : 0.9931100023758613 
-# Test accuracy score : 0.9900377877018207
+# Test f1 score : 0.9388048956083515 
+# Test accuracy score : 0.9124012366884232
+
 import pandas as pd
 import numpy as np
 
 from tensorflow.keras import optimizers, losses, activations, models
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, ReduceLROnPlateau
 from tensorflow.keras.layers import Dense, Input, Dropout, Convolution1D, MaxPool1D, GlobalMaxPool1D, GlobalAveragePooling1D, \
-    concatenate
+    concatenate, LSTM
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import train_test_split
 
@@ -19,34 +19,19 @@ df_train, df_test = train_test_split(df, test_size=0.2, random_state=1337, strat
 
 
 Y = np.array(df_train[187].values).astype(np.int8)
-X = np.array(df_train[list(range(187))].values)[..., np.newaxis]
+X = np.array(df_train[list(range(187))].values)[:, np.newaxis, :]
 
 Y_test = np.array(df_test[187].values).astype(np.int8)
-X_test = np.array(df_test[list(range(187))].values)[..., np.newaxis]
+X_test = np.array(df_test[list(range(187))].values)[:, np.newaxis, :]
 
-
+print(X.shape, Y.shape)
 def get_model():
     nclass = 1
-    inp = Input(shape=(187, 1))
-    img_1 = Convolution1D(16, kernel_size=5, activation=activations.relu, padding="valid")(inp)
-    img_1 = Convolution1D(16, kernel_size=5, activation=activations.relu, padding="valid")(img_1)
-    img_1 = MaxPool1D(pool_size=2)(img_1)
-    img_1 = Dropout(rate=0.1)(img_1)
-    img_1 = Convolution1D(32, kernel_size=3, activation=activations.relu, padding="valid")(img_1)
-    img_1 = Convolution1D(32, kernel_size=3, activation=activations.relu, padding="valid")(img_1)
-    img_1 = MaxPool1D(pool_size=2)(img_1)
-    img_1 = Dropout(rate=0.1)(img_1)
-    img_1 = Convolution1D(32, kernel_size=3, activation=activations.relu, padding="valid")(img_1)
-    img_1 = Convolution1D(32, kernel_size=3, activation=activations.relu, padding="valid")(img_1)
-    img_1 = MaxPool1D(pool_size=2)(img_1)
-    img_1 = Dropout(rate=0.1)(img_1)
-    img_1 = Convolution1D(256, kernel_size=3, activation=activations.relu, padding="valid")(img_1)
-    img_1 = Convolution1D(256, kernel_size=3, activation=activations.relu, padding="valid", name="final_conv")(img_1)
-    img_1 = GlobalMaxPool1D()(img_1)
-    img_1 = Dropout(rate=0.2)(img_1)
-
+    inp = Input(shape=(1, 187))
+    img_1 = LSTM(128, dropout=0.2, return_sequences=True)(inp)
+    img_1 = LSTM(64, dropout=0.2)(img_1)
+    
     dense_1 = Dense(64, activation=activations.relu, name="dense_1")(img_1)
-    dense_1 = Dense(64, activation=activations.relu, name="dense_2")(dense_1)
     dense_1 = Dense(nclass, activation=activations.sigmoid, name="dense_3_ptbdb")(dense_1)
 
     model = models.Model(inputs=inp, outputs=dense_1)
@@ -57,7 +42,7 @@ def get_model():
     return model
 
 model = get_model()
-file_path = "baseline_cnn_ptbdb.h5"
+file_path = "lstm_ptbdb.h5"
 checkpoint = ModelCheckpoint(file_path, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
 early = EarlyStopping(monitor="val_acc", mode="max", patience=5, verbose=1)
 redonplat = ReduceLROnPlateau(monitor="val_acc", mode="max", patience=3, verbose=2)
