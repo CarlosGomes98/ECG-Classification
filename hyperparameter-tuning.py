@@ -108,17 +108,17 @@ params = {
     'epochs': [2],
     'batch_size': [64],
     'learning_rate': [1e-3],
-    'dropout': [0.2],
+    'dropout': [0.1],
     'rnn_sizes': [[128, 128], [128, 128, 128]],
     'fc_sizes': [[64], [64, 64], [64, 32]],
     'batch_norm': [True, False]
 }
 
 dummy_params = {
-    'epochs': [30],
+    'epochs': [45],
     'batch_size': [128],
     'learning_rate': [1e-4],
-    'dropout': [0.2],
+    'dropout': [0.1],
     'rnn_sizes': [[128, 128, 128]],
     'fc_sizes': [[64, 32]],
     'batch_norm': [True]
