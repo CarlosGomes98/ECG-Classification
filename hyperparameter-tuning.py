@@ -88,6 +88,12 @@ class CustomRNN(BaseEstimator):
         self.batch_norm = batch_norm
                 
         return self
+    
+    def score(self, eval_X, eval_y):
+        predicted_y = np.argmax(self.model.predict(eval_X), axis=1)
+        f1_score_ = f1_score(predicted_y, eval_y, average='macro')
+        print("f1 score: ", f1_score_)
+        return f1_score_
         
     def build_model(self):
         self.model = build_gru(n_class=5, dropout=self.dropout, 
@@ -97,10 +103,6 @@ class CustomRNN(BaseEstimator):
         self.model.compile(optimizer=opt, 
                       loss="sparse_categorical_crossentropy", 
                       metrics=['accuracy'])        
-
-
-# In[ ]:
-
 
 params = {
     'epochs': [2],
@@ -113,11 +115,11 @@ params = {
 }
 
 dummy_params = {
-    'epochs': [20],
-    'batch_size': [64],
+    'epochs': [30],
+    'batch_size': [128],
     'learning_rate': [1e-4],
     'dropout': [0.2],
-    'rnn_sizes': [[128, 128]],
+    'rnn_sizes': [[128, 128, 128]],
     'fc_sizes': [[64, 32]],
     'batch_norm': [True]
 }
@@ -125,12 +127,12 @@ dummy_params = {
 model = CustomRNN()
 search = GridSearchCV(estimator=model, 
                       param_grid=dummy_params,
-                      scoring=make_scorer(f1_score, average='macro'),
-                      n_jobs=1, 
+                      n_jobs=1,
+                      cv=5,
                       return_train_score=True, 
                       refit=False, 
                       verbose=10,
                       error_score='raise')
 best = search.fit(X[:, :, :], Y[:])
-best.__dict__
+print(best.__dict__)
 
