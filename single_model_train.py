@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import os
+from datetime import datetime
 
 from sklearn.model_selection import train_test_split
 import sklearn.decomposition as decomposition
@@ -15,7 +17,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.layers import LSTM, GRU, BatchNormalization
 from tensorflow.keras.models import load_model
-from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, ReduceLROnPlateau
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, ReduceLROnPlateau, TensorBoard
 
 df_train = pd.read_csv("data/mitbih_train.csv", header=None)
 df_train = df_train.sample(frac=1)
@@ -32,6 +34,11 @@ X_train, X_eval, y_train, y_eval = train_test_split(X, Y,
                                                     test_size=0.15)
 
 print(X_train.shape, X_eval.shape)
+
+print("Distribution of classes in train set")
+print(np.unique(y_train, return_counts=True))
+print("Distribution of classes in evaluation set")
+print(np.unique(y_eval, return_counts=True))
 
 n_class = np.unique(Y).size
 
@@ -62,10 +69,20 @@ def build_gru(n_class=5, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], bat
 
 class F1_Metric(tf.keras.callbacks.Callback):
 
-	 def on_epoch_end(self, batch, logs={}):
+	 def on_epoch_end(self, epoch, logs={}):
 	    predicted_y = np.argmax(self.model.predict(X_eval), axis=1)
 	    score = f1_score(predicted_y, y_eval, average='macro')
-	    print("f1_score: ", score)
+	    tf.summary.scalar('f1_score', data=score, step=epoch)
+
+	    # TODO: automatically find dominant class instead of hard-coding 0
+	    print(predicted_y == 0)
+	    print(np.unique(predicted_y, return_counts=True))
+	    num_predicted_dominant_class = np.sum(predicted_y == 0)
+	    print("Num predicted dominant class: ", num_predicted_dominant_class)
+	    tf.summary.scalar('Number of samples predicted as dominant class', 
+	    				  data=num_predicted_dominant_class,
+	    				  step=epoch)
+	    print("\nf1_score: ", score)
 
 model = build_gru(n_class=5, 
 				  dropout=0.2, 
@@ -78,8 +95,15 @@ model.compile(optimizer=opt,
 		           loss="sparse_categorical_crossentropy", 
 		           metrics=['accuracy'])
 
-model.fit(X_train[:, :, :], y_train[:], 
+logdir = os.path.join("logs", "scalars", str(datetime.now().strftime("%Y%m%d-%H%M%S")))
+if not os.path.exists(logdir):
+	os.makedirs(logdir)
+file_writer = tf.summary.create_file_writer(logdir + "/metrics")
+file_writer.set_as_default()
+tensorboard_callback = TensorBoard(log_dir=logdir)
+
+model.fit(X_train[:20000, :, :], y_train[:20000], 
 		  validation_data=(X_eval, y_eval),
-		  epochs=100, 
+		  epochs=10, 
 		  batch_size=128,
-		  callbacks=[F1_Metric()])
+		  callbacks=[F1_Metric(), tensorboard_callback])
