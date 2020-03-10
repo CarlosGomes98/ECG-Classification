@@ -102,8 +102,8 @@ file_writer = tf.summary.create_file_writer(logdir + "/metrics")
 file_writer.set_as_default()
 tensorboard_callback = TensorBoard(log_dir=logdir)
 
-model.fit(X_train[:20000, :, :], y_train[:20000], 
+model.fit(X_train[:, :, :], y_train[:], 
 		  validation_data=(X_eval, y_eval),
-		  epochs=10, 
+		  epochs=100, 
 		  batch_size=128,
 		  callbacks=[F1_Metric(), tensorboard_callback])
