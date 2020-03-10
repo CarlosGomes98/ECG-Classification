@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import sklearn.decomposition as decomposition
 from sklearn.manifold import TSNE
-from sklearn.metrics import f1_score, accuracy_score, make_scorer
+from sklearn.metrics import f1_score, accuracy_score, make_scorer, confusion_matrix
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import GridSearchCV
@@ -16,11 +16,6 @@ from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.layers import LSTM, GRU, BatchNormalization
 from tensorflow.keras.models import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, ReduceLROnPlateau
-
-import matplotlib.pyplot as plt
-import seaborn as sb
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.patches as mpatches
 
 df_train = pd.read_csv("data/mitbih_train.csv", header=None)
 df_train = df_train.sample(frac=1)
@@ -62,8 +57,6 @@ def build_gru(n_class=5, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], bat
 class CustomRNN(BaseEstimator):
     def fit(self, train_X, train_y, **kwargs):
         
-        self.build_model()
-        
         # early = EarlyStopping(monitor="val_accuracy", mode="max", patience=5, verbose=1)
         # redonplat = ReduceLROnPlateau(monitor="val_accuracy", mode="max", patience=3, verbose=2)
         # callbacks_list = [checkpoint, early, redonplat]  # early
@@ -86,6 +79,8 @@ class CustomRNN(BaseEstimator):
         self.rnn_sizes = rnn_sizes
         self.fc_sizes = fc_sizes
         self.batch_norm = batch_norm
+
+        self.build_model()
                 
         return self
     
@@ -93,6 +88,7 @@ class CustomRNN(BaseEstimator):
         predicted_y = np.argmax(self.model.predict(eval_X), axis=1)
         f1_score_ = f1_score(predicted_y, eval_y, average='macro')
         print("f1 score: ", f1_score_)
+        print(confusion_matrix(predicted_y, eval_y))
         return f1_score_
         
     def build_model(self):
@@ -115,9 +111,9 @@ params = {
 }
 
 dummy_params = {
-    'epochs': [45],
+    'epochs': [1],
     'batch_size': [128],
-    'learning_rate': [1e-4],
+    'learning_rate': [1e-3, 1e-4],
     'dropout': [0.1],
     'rnn_sizes': [[128, 128, 128]],
     'fc_sizes': [[64, 32]],
@@ -125,14 +121,17 @@ dummy_params = {
 }
 
 model = CustomRNN()
-search = GridSearchCV(estimator=model, 
-                      param_grid=dummy_params,
+search = GridSearchCV(model, 
+                      dummy_params,
                       n_jobs=1,
-                      cv=5,
-                      return_train_score=True, 
-                      refit=False, 
+                      cv=2,
+                      return_train_score=True,
+                      scoring='accuracy', 
+                      refit=False,   
                       verbose=10,
                       error_score='raise')
-best = search.fit(X[:, :, :], Y[:])
+best = search.fit(X[:1000, :, :], Y[:1000])
 print(best.__dict__)
+
+
 
