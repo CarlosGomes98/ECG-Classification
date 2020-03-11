@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import os
+from datetime import datetime
 
 from sklearn.model_selection import train_test_split
 import sklearn.decomposition as decomposition
@@ -16,6 +18,8 @@ from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.layers import LSTM, GRU, BatchNormalization
 from tensorflow.keras.models import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, ReduceLROnPlateau
+
+from metrics import f1_m
 
 df_train = pd.read_csv("data/mitbih_train.csv", header=None)
 df_train = df_train.sample(frac=1)
@@ -55,12 +59,34 @@ def build_gru(n_class=5, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], bat
     return model
 
 class CustomRNN(BaseEstimator):
+
+    def __init__(self,  epochs=100, 
+                        batch_size=64, 
+                        learning_rate=1e-3, 
+                        dropout=0.3, 
+                        rnn_sizes=[128, 128],
+                        fc_sizes=[64],
+                        batch_norm=True):
+        #print("Initializing model")
+        self.epochs = epochs
+        self.batch_size = batch_size
+        self.learning_rate = learning_rate
+        self.dropout = dropout
+        self.rnn_sizes = rnn_sizes
+        self.fc_sizes = fc_sizes
+        self.batch_norm = batch_norm
+
     def fit(self, train_X, train_y, **kwargs):
         
-        # early = EarlyStopping(monitor="val_accuracy", mode="max", patience=5, verbose=1)
-        # redonplat = ReduceLROnPlateau(monitor="val_accuracy", mode="max", patience=3, verbose=2)
-        # callbacks_list = [checkpoint, early, redonplat]  # early
-        self.model.fit(train_X, train_y, validation_split=0.1, epochs=self.epochs, batch_size=self.batch_size)
+        early = EarlyStopping(monitor="val_loss", mode="min", patience=5, verbose=1)
+        redonplat = ReduceLROnPlateau(monitor="val_loss", mode="min", patience=3, verbose=2)
+        callbacks_list = [early, redonplat]
+        self.build_model()
+
+        self.model.fit(train_X, train_y, validation_split=0.1, 
+                                         epochs=self.epochs, 
+                                         batch_size=self.batch_size, 
+                                         callbacks=callbacks_list)
     
     def predict(self, eval_X):
         return np.argmax(self.model.predict(eval_X), axis=1)
@@ -79,26 +105,29 @@ class CustomRNN(BaseEstimator):
         self.rnn_sizes = rnn_sizes
         self.fc_sizes = fc_sizes
         self.batch_norm = batch_norm
-
-        self.build_model()
                 
         return self
+
+    def get_params(self, deep=False):
+      params = self.__dict__
+      params.pop('model', None)
+      return params
     
-    def score(self, eval_X, eval_y):
+    """def score(self, eval_X, eval_y):
         predicted_y = np.argmax(self.model.predict(eval_X), axis=1)
         f1_score_ = f1_score(predicted_y, eval_y, average='macro')
-        print("f1 score: ", f1_score_)
-        print(confusion_matrix(predicted_y, eval_y))
-        return f1_score_
+        return f1_score_ """
         
     def build_model(self):
+        print("Building model")
         self.model = build_gru(n_class=5, dropout=self.dropout, 
                           rnn_sizes=self.rnn_sizes, fc_sizes=self.fc_sizes, batch_norm=self.batch_norm)
         opt = optimizers.Adam(self.learning_rate)
             
         self.model.compile(optimizer=opt, 
                       loss="sparse_categorical_crossentropy", 
-                      metrics=['accuracy'])        
+                      metrics=['accuracy'])
+        #self.model.summary()       
 
 params = {
     'epochs': [2],
@@ -111,12 +140,12 @@ params = {
 }
 
 dummy_params = {
-    'epochs': [1],
+    'epochs': [100],
     'batch_size': [128],
-    'learning_rate': [1e-3, 1e-4],
-    'dropout': [0.1],
-    'rnn_sizes': [[128, 128, 128]],
-    'fc_sizes': [[64, 32]],
+    'learning_rate': [1e-4],
+    'dropout': [0.2],
+    'rnn_sizes': [[128, 128, 64, 64], [128, 128, 128], [256, 256, 128]],
+    'fc_sizes': [[64], [64, 64]],
     'batch_norm': [True]
 }
 
@@ -124,14 +153,30 @@ model = CustomRNN()
 search = GridSearchCV(model, 
                       dummy_params,
                       n_jobs=1,
-                      cv=2,
+                      cv=5,
                       return_train_score=True,
-                      scoring='accuracy', 
-                      refit=False,   
+                      scoring={'f1_score': make_scorer(f1_score, average='macro'),
+                               'accuracy': 'accuracy'}, 
+                      refit='f1_score',   
                       verbose=10,
                       error_score='raise')
-best = search.fit(X[:1000, :, :], Y[:1000])
+best = search.fit(X[:, :, :], Y[:])
 print(best.__dict__)
+print("BEST PARAMS: ", best.best_params_)
+
+model_dir = 'models'
+if not os.path.exists(model_dir):
+  os.makedirs(model_dir)
+
+best_estimator = best.best_estimator_
+best_estimator.fit(X, Y)
+predicted_y = best_estimator.predict(X_test)
+print("TEST EVALUATION")
+print("F1-SCORE: ", f1_score(predicted_y, Y_test, average='macro'))
+print("ACCURACY: ", accuracy_score(predicted_y, Y_test))
+print(confusion_matrix(predicted_y, Y_test))
+
+best_estimator.model.save(os.path.join(model_dir, str(datetime.now().strftime("%Y%m%d-%H%M%S"))))
 
 
 
