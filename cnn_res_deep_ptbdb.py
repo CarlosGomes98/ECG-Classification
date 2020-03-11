@@ -46,7 +46,9 @@ X_test = np.array(df_test[list(range(187))].values)[..., np.newaxis]
 def maxpool_block(X, filters, kernel_size=5, dropout=0.1, pool_size=2):
     img_1 = Convolution1D(filters, kernel_size=kernel_size, activation='relu', padding='same')(X)
     img_1 = Convolution1D(filters, kernel_size=kernel_size, activation='relu', padding='same')(img_1)
-    img_1 = Add()([X, img_1])
+    img_1 = Convolution1D(filters, kernel_size=kernel_size, activation='relu', padding='same')(img_1)
+    shortcut = Convolution1D(filters, kernel_size=kernel_size, activation='relu', padding='same')(X)
+    img_1 = Add()([shortcut, img_1])
     img_1 = Activation('relu')(img_1)
     img_1 = MaxPool1D(pool_size=2)(img_1)
     return img_1
@@ -57,6 +59,7 @@ def maxpool_block(X, filters, kernel_size=5, dropout=0.1, pool_size=2):
 
 def identity_block(X, filters, kernel_size=5, dropout=0.1, pool_size=2):
     img_1 = Convolution1D(filters, kernel_size=kernel_size, activation='relu', padding='same')(X)
+    img_1 = Convolution1D(filters, kernel_size=kernel_size, activation='relu', padding='same')(img_1)
     img_1 = Convolution1D(filters, kernel_size=kernel_size, activation='relu', padding='same')(img_1)
     img_1 = Add()([X, img_1])
     img_1 = Activation('relu')(img_1)
