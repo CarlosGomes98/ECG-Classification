@@ -11,7 +11,7 @@ from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, precision_r
 
 
 # ### MITBIH baseline
-# #### Code mostly from https://github.com/CVxTz/ECG_Heartbeat_Classification/blob/master/code/baseline_mitbih.py
+# #### Code mostly from https://github.com/CVxTz/ECG_Heartbeat_Classification/blob/master/code/baseline_ptbdb.py
 
 # In[4]:
 
@@ -60,8 +60,8 @@ def get_model():
     img_1 = Convolution1D(32, kernel_size=5, activation=activations.relu, padding="valid")(inp)
     for i in range(5):
         img_1 = res_block(img_1, 32, dropout=0.2)
-    img_1 = Convolution1D(256, kernel_size=3, activation=activations.relu, padding="same")(img_1)  
-    img_1 = Convolution1D(256, kernel_size=3, activation=activations.relu, padding="same", name="final_conv")(img_1)
+    img_1 = Convolution1D(32, kernel_size=3, activation=activations.relu, padding="same")(img_1)  
+    img_1 = Convolution1D(32, kernel_size=3, activation=activations.relu, padding="same", name="final_conv")(img_1)
     img_1 = GlobalMaxPool1D()(img_1)
     img_1 = Dropout(rate=0.2)(img_1)
 
@@ -97,7 +97,7 @@ model.load_weights(file_path)
 
 
 pred_test = model.predict(X_test)
-pred_test = np.argmax(pred_test, axis=-1)
+pred_test = (pred_test>0.5).astype(np.int8)
 
 f1 = f1_score(Y_test, pred_test, average="macro")
 

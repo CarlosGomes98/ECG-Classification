@@ -69,10 +69,21 @@ model.load_weights(file_path)
 pred_test = model.predict(X_test)
 pred_test = (pred_test>0.5).astype(np.int8)
 
-f1 = f1_score(Y_test, pred_test)
+f1 = f1_score(Y_test, pred_test, average="macro")
 
 print("Test f1 score : %s "% f1)
 
 acc = accuracy_score(Y_test, pred_test)
 
 print("Test accuracy score : %s "% acc)
+
+auc_roc = roc_auc_score(Y_test, pred_test)
+
+print("AUROC score : %s "% acc)
+
+precision, recall, _ = precision_recall_curve(Y_test, pred_test)
+
+auc_prc = auc(recall, precision)
+print("AUPRC score : %s "% auc_prc)
+
+print(confusion_matrix(Y_test, pred_test))
