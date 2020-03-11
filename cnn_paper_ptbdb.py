@@ -55,7 +55,7 @@ def res_block(X, filters, kernel_size=5, dropout=0.1, pool_size=2):
 
 
 def get_model():
-    nclass = 5
+    nclass = 1
     inp = Input(shape=(187, 1))
     img_1 = Convolution1D(32, kernel_size=5, activation=activations.relu, padding="valid")(inp)
     for i in range(5):
@@ -67,12 +67,12 @@ def get_model():
 
     dense_1 = Dense(32, activation=activations.relu, name="dense_1")(img_1)
     dense_1 = Dense(32, activation=activations.relu, name="dense_2")(dense_1)
-    dense_1 = Dense(nclass, activation=activations.softmax, name="dense_3_mitbih")(dense_1)
+    dense_1 = Dense(nclass, activation=activations.sigmoid, name="dense_3_mitbih")(dense_1)
 
     model = models.Model(inputs=inp, outputs=dense_1)
     opt = optimizers.Adam(0.001)
 
-    model.compile(optimizer=opt, loss=losses.sparse_categorical_crossentropy, metrics=['acc'])
+    model.compile(optimizer=opt, loss=losses.binary_crossentropy, metrics=['acc'])
     model.summary()
     return model
 
