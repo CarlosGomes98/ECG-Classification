@@ -6,6 +6,7 @@ from tensorflow.keras import optimizers, losses, activations, models
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, ReduceLROnPlateau
 from tensorflow.keras.layers import Dense, Input, Dropout, Convolution1D, MaxPool1D, GlobalMaxPool1D, GlobalAveragePooling1D,     concatenate, Add, Activation
 from tensorflow.keras.models import load_model
+from sklearn.model_selection import train_test_split
 
 from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, precision_recall_curve, auc, confusion_matrix
 
