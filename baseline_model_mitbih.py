@@ -7,7 +7,7 @@ from tensorflow.keras import optimizers, losses, activations, models
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, ReduceLROnPlateau
 from tensorflow.keras.layers import Dense, Input, Dropout, Convolution1D, MaxPool1D, GlobalMaxPool1D, GlobalAveragePooling1D, \
     concatenate
-from sklearn.metrics import f1_score, accuracy_score
+from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, precision_recall_curve, auc, confusion_matrix
 
 
 df_train = pd.read_csv("data/mitbih_train.csv", header=None)
@@ -72,3 +72,6 @@ print("Test f1 score : %s "% f1)
 acc = accuracy_score(Y_test, pred_test)
 
 print("Test accuracy score : %s "% acc)
+
+print(tensorflow.math.confusion_matrix(
+    Y_test, pred_test, num_classes=5))
