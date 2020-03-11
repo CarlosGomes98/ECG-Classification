@@ -100,7 +100,7 @@ def get_model():
 
 
 model = get_model()
-file_path = "cnn_res_deep_mitbih.h5"
+file_path = "cnn_res_deep_ptbdb.h5"
 checkpoint = ModelCheckpoint(file_path, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
 early = EarlyStopping(monitor="val_acc", mode="max", patience=5, verbose=1)
 redonplat = ReduceLROnPlateau(monitor="val_acc", mode="max", patience=3, verbose=2)
