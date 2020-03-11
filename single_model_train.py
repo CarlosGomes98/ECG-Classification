@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+import sys
 from datetime import datetime
 
 from sklearn.model_selection import train_test_split
@@ -15,7 +16,7 @@ import tensorflow as tf
 from tensorflow.keras import Model, Input, optimizers
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
-from tensorflow.keras.layers import LSTM, GRU, BatchNormalization
+from tensorflow.keras.layers import LSTM, GRU, BatchNormalization, Bidirectional
 from tensorflow.keras.models import load_model
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, ReduceLROnPlateau, TensorBoard
 
@@ -67,6 +68,32 @@ def build_gru(n_class=5, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], bat
 
     return model
 
+def build_bilstm(n_class=5, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], batch_norm=True):
+    nclass = 5
+    model = Sequential()
+    model.add(Input(shape=(187, 1)))
+    
+    if batch_norm:
+        model.add(BatchNormalization())
+        
+    for index, dim in enumerate(rnn_sizes):
+        model.add(Bidirectional(GRU(dim, dropout=dropout, return_sequences=(index != len(rnn_sizes) - 1))))
+        
+        if batch_norm:
+            model.add(BatchNormalization())
+    
+    for index, dim in enumerate(fc_sizes):
+        model.add(Dense(dim, activation="relu"))
+        model.add(Dropout(dropout))
+        
+        if batch_norm:
+            model.add(BatchNormalization())
+            
+    model.add(Dense(nclass, activation="softmax"))
+
+    return model
+
+
 class F1_Metric(tf.keras.callbacks.Callback):
 
 	 def on_epoch_end(self, epoch, logs={}):
@@ -75,20 +102,30 @@ class F1_Metric(tf.keras.callbacks.Callback):
 	    tf.summary.scalar('f1_score', data=score, step=epoch)
 
 	    # TODO: automatically find dominant class instead of hard-coding 0
-	    print(predicted_y == 0)
-	    print(np.unique(predicted_y, return_counts=True))
+	    print("\n", np.unique(predicted_y, return_counts=True))
 	    num_predicted_dominant_class = np.sum(predicted_y == 0)
-	    print("Num predicted dominant class: ", num_predicted_dominant_class)
+	    print("\nNum predicted dominant class: ", num_predicted_dominant_class)
 	    tf.summary.scalar('Number of samples predicted as dominant class', 
 	    				  data=num_predicted_dominant_class,
 	    				  step=epoch)
 	    print("\nf1_score: ", score)
 
-model = build_gru(n_class=5, 
-				  dropout=0.2, 
-				  rnn_sizes=[128, 128, 128], 
-				  fc_sizes=[64, 64], 
-				  batch_norm=True)
+if sys.argv[1] == 'gru':
+	model = build_gru(n_class=5, 
+					  dropout=0.2, 
+					  rnn_sizes=[128, 128, 128], 
+					  fc_sizes=[64, 64], 
+					  batch_norm=True)
+elif sys.argv[1] == 'bilstm':
+	model = build_bilstm(n_class=5, 
+					  	 dropout=0.2, 
+					  	 rnn_sizes=[128, 128], 
+					  	 fc_sizes=[64], 
+					  	 batch_norm=True)
+else:
+	print("Invalid argument")
+	sys.exit()
+
 opt = optimizers.Adam(1e-4)
 
 model.compile(optimizer=opt, 
@@ -104,6 +141,6 @@ tensorboard_callback = TensorBoard(log_dir=logdir)
 
 model.fit(X_train[:, :, :], y_train[:], 
 		  validation_data=(X_eval, y_eval),
-		  epochs=100, 
-		  batch_size=128,
+		  epochs=50, 
+		  batch_size=64,
 		  callbacks=[F1_Metric(), tensorboard_callback])
