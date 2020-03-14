@@ -77,7 +77,7 @@ class CustomRNN(BaseEstimator):
         self.batch_norm = batch_norm
 
     def fit(self, train_X, train_y, **kwargs):
-        
+        tensorflow.keras.backend.clear_session()
         early = EarlyStopping(monitor="val_loss", mode="min", patience=5, verbose=1)
         redonplat = ReduceLROnPlateau(monitor="val_loss", mode="min", patience=3, verbose=2)
         callbacks_list = [early, redonplat]
@@ -130,13 +130,13 @@ class CustomRNN(BaseEstimator):
         #self.model.summary()       
 
 params = {
-    'epochs': [2],
+    'epochs': [100],
     'batch_size': [64],
     'learning_rate': [1e-3],
-    'dropout': [0.1],
-    'rnn_sizes': [[128, 128], [128, 128, 128]],
+    'dropout': [0.1, 0.2],
+    'rnn_sizes': [[128, 128], [128, 128, 128], [256, 256, 128], [64, 64]],
     'fc_sizes': [[64], [64, 64], [64, 32]],
-    'batch_norm': [True, False]
+    'batch_norm': [False]
 }
 
 dummy_params = {
@@ -151,7 +151,7 @@ dummy_params = {
 
 model = CustomRNN()
 search = GridSearchCV(model, 
-                      dummy_params,
+                      params,
                       n_jobs=1,
                       cv=5,
                       return_train_score=True,
@@ -172,9 +172,9 @@ best_estimator = best.best_estimator_
 best_estimator.fit(X, Y)
 predicted_y = best_estimator.predict(X_test)
 print("TEST EVALUATION")
-print("F1-SCORE: ", f1_score(predicted_y, Y_test, average='macro'))
-print("ACCURACY: ", accuracy_score(predicted_y, Y_test))
-print(confusion_matrix(predicted_y, Y_test))
+print("F1-SCORE: ", f1_score(Y_test, predicted_y, average='macro'))
+print("ACCURACY: ", accuracy_score(Y_test, predicted_y))
+print(confusion_matrix(Y_test, predicted_y))
 
 best_estimator.model.save(os.path.join(model_dir, str(datetime.now().strftime("%Y%m%d-%H%M%S"))))
 

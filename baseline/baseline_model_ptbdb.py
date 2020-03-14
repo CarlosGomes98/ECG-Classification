@@ -11,8 +11,8 @@ from tensorflow.keras.layers import Dense, Input, Dropout, Convolution1D, MaxPoo
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import train_test_split
 
-df_1 = pd.read_csv("data/ptbdb_normal.csv", header=None)
-df_2 = pd.read_csv("data/ptbdb_abnormal.csv", header=None)
+df_1 = pd.read_csv("../data/ptbdb_normal.csv", header=None)
+df_2 = pd.read_csv("../data/ptbdb_abnormal.csv", header=None)
 df = pd.concat([df_1, df_2])
 
 df_train, df_test = train_test_split(df, test_size=0.2, random_state=1337, stratify=df[187])
