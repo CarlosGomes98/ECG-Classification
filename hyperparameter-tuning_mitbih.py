@@ -77,7 +77,7 @@ class CustomRNN(BaseEstimator):
         self.batch_norm = batch_norm
 
     def fit(self, train_X, train_y, **kwargs):
-        tensorflow.keras.backend.clear_session()
+        tf.keras.backend.clear_session()
         early = EarlyStopping(monitor="val_loss", mode="min", patience=5, verbose=1)
         redonplat = ReduceLROnPlateau(monitor="val_loss", mode="min", patience=3, verbose=2)
         callbacks_list = [early, redonplat]
