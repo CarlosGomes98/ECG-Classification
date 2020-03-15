@@ -69,7 +69,7 @@ model.load_weights(file_path)
 pred_test = model.predict(X_test)
 pred_test = (pred_test>0.5).astype(np.int8)
 
-f1 = f1_score(Y_test, pred_test, average="macro")
+f1 = f1_score(Y_test, pred_test)
 
 print("Test f1 score : %s "% f1)
 
