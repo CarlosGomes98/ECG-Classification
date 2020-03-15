@@ -138,9 +138,26 @@ if not os.path.exists(logdir):
 file_writer = tf.summary.create_file_writer(logdir + "/metrics")
 file_writer.set_as_default()
 tensorboard_callback = TensorBoard(log_dir=logdir)
+early = EarlyStopping(monitor="val_loss", mode="min", patience=5, verbose=1)
+redonplat = ReduceLROnPlateau(monitor="val_loss", mode="min", patience=3, verbose=2)
 
 model.fit(X_train[:, :, :], y_train[:], 
 		  validation_data=(X_eval, y_eval),
 		  epochs=50, 
-		  batch_size=64,
-		  callbacks=[F1_Metric(), tensorboard_callback])
+		  batch_size=32,
+		  callbacks=[F1_Metric(), 
+                     tensorboard_callback,
+                     early,
+                     redonplat])
+
+
+print("TEST EVALUATION")
+predicted_y = np.argmax(model.predict(X_test), axis=1)
+print("F1-SCORE: ", f1_score(Y_test, predicted_y, average='macro'))
+print("ACCURACY: ", accuracy_score(Y_test, predicted_y))
+print(confusion_matrix(Y_test, predicted_y))
+
+model_dir = 'models'
+if not os.path.exists(model_dir):
+  os.makedirs(model_dir)
+model.save(os.path.join(model_dir, str(datetime.now().strftime("%Y%m%d-%H%M%S"))))
