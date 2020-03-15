@@ -38,10 +38,9 @@ X_train, X_eval, y_train, y_eval = train_test_split(X, Y,
 
 print(X_train.shape, X_eval.shape)
 
-n_class = np.unique(Y).size
+n_class = 1
 
-def build_gru(n_class=5, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], batch_norm=True):
-    nclass = 5
+def build_gru(n_class=2, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], batch_norm=True):
     model = Sequential()
     model.add(Input(shape=(187, 1)))
     
@@ -61,12 +60,11 @@ def build_gru(n_class=5, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], bat
         if batch_norm:
             model.add(BatchNormalization())
             
-    model.add(Dense(nclass, activation="softmax"))
+    model.add(Dense(n_class, activation="sigmoid"))
 
     return model
 
-def build_bilstm(n_class=5, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], batch_norm=True):
-    nclass = 5
+def build_bilstm(n_class=2, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], batch_norm=True):
     model = Sequential()
     model.add(Input(shape=(187, 1)))
     
@@ -86,7 +84,7 @@ def build_bilstm(n_class=5, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], 
         if batch_norm:
             model.add(BatchNormalization())
             
-    model.add(Dense(nclass, activation="softmax"))
+    model.add(Dense(n_class, activation="sigmoid"))
 
     return model
 
@@ -111,31 +109,30 @@ opt = optimizers.Adam(1e-4)
 early = EarlyStopping(monitor="val_loss", mode="min", patience=5, verbose=1)
 redonplat = ReduceLROnPlateau(monitor="val_loss", mode="min", patience=3, verbose=2)
 model.compile(optimizer=opt, 
-	          loss=losses.binary_crossentropy, 
+	          loss='binary_crossentropy', 
 	          metrics=['accuracy'])
 
 logdir = os.path.join("logs", "scalars", str(datetime.now().strftime("%Y%m%d-%H%M%S")))
 if not os.path.exists(logdir):
 	os.makedirs(logdir)
-file_writer = tf.summary.create_file_writer(logdir + "/metrics")
-file_writer.set_as_default()
-tensorboard_callback = TensorBoard(log_dir=logdir)
+#file_writer = tf.summary.create_file_writer(logdir + "/metrics")
+#file_writer.set_as_default()
+#tensorboard_callback = TensorBoard(log_dir=logdir)
 early = EarlyStopping(monitor="val_loss", mode="min", patience=5, verbose=1)
 redonplat = ReduceLROnPlateau(monitor="val_loss", mode="min", patience=3, verbose=2)
 
-model.fit(X_train[:, :, :], y_train[:], 
+model.fit(X_train[:10000, :, :], y_train[:10000], 
 		  validation_data=(X_eval, y_eval),
-		  epochs=50, 
-		  batch_size=64,
-		  callbacks=[tensorboard_callback,
-                     early,
+		  epochs=5, 
+		  batch_size=16,
+		  callbacks=[early,
                      redonplat])
 
 predicted_y = np.argmax(model.predict(X_test), axis=1)
 print("TEST EVALUATION")
-print("F1-SCORE: ", f1_score(Y_test, predicted_y, average='macro'))
+print("F1-SCORE: ", f1_score(Y_test, predicted_y))
 print("ACCURACY: ", accuracy_score(Y_test, predicted_y))
-auc_roc = roc_auc_score(Y_test, predicted_y)
+acc = roc_auc_score(Y_test, predicted_y)
 print("AUROC score : %s "% acc)
 precision, recall, _ = precision_recall_curve(Y_test, predicted_y)
 auc_prc = auc(recall, precision)
