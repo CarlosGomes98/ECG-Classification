@@ -131,12 +131,16 @@ model.fit(X_train[:, :, :], y_train[:],
                      early,
                      redonplat])
 
-print("TEST EVALUATION")
 predicted_y = np.argmax(model.predict(X_test), axis=1)
+print("TEST EVALUATION")
 print("F1-SCORE: ", f1_score(Y_test, predicted_y, average='macro'))
 print("ACCURACY: ", accuracy_score(Y_test, predicted_y))
+auc_roc = roc_auc_score(Y_test, predicted_y)
+print("AUROC score : %s "% acc)
+precision, recall, _ = precision_recall_curve(Y_test, predicted_y)
+auc_prc = auc(recall, precision)
+print("AUPRC score : %s "% auc_prc)
 print(confusion_matrix(Y_test, predicted_y))
-
 model_dir = 'models'
 if not os.path.exists(model_dir):
   os.makedirs(model_dir)

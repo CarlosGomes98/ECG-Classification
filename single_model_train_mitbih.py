@@ -113,14 +113,14 @@ class F1_Metric(tf.keras.callbacks.Callback):
 if sys.argv[1] == 'gru':
 	model = build_gru(n_class=5, 
 					  dropout=0.2, 
-					  rnn_sizes=[128, 128, 128], 
+					  rnn_sizes=[128, 128], 
 					  fc_sizes=[64, 64], 
 					  batch_norm=True)
 elif sys.argv[1] == 'bilstm':
 	model = build_bilstm(n_class=5, 
 					  	 dropout=0.2, 
-					  	 rnn_sizes=[128, 128], 
-					  	 fc_sizes=[64], 
+					  	 rnn_sizes=[256, 256], 
+					  	 fc_sizes=[64, 32], 
 					  	 batch_norm=True)
 else:
 	print("Invalid argument")
@@ -143,7 +143,7 @@ redonplat = ReduceLROnPlateau(monitor="val_loss", mode="min", patience=3, verbos
 
 model.fit(X_train[:, :, :], y_train[:], 
 		  validation_data=(X_eval, y_eval),
-		  epochs=50, 
+		  epochs=100, 
 		  batch_size=32,
 		  callbacks=[F1_Metric(), 
                      tensorboard_callback,
