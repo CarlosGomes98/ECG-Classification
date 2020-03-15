@@ -12,12 +12,10 @@ from tensorflow.keras import optimizers, losses, activations, models, Model
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, ReduceLROnPlateau
 from tensorflow.keras.layers import Dense, Input, Dropout, GRU,     concatenate, Add, Activation
 from tensorflow.keras.models import load_model
-from tensorflow.keras.utils import plot_model
 from sklearn.utils.class_weight import compute_class_weight
 
 from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, precision_recall_curve, auc, confusion_matrix
 from sklearn.model_selection import train_test_split
-from IPython.display import Image
 
 
 # In[3]:
@@ -47,8 +45,9 @@ base_model = load_model("rnn/rnn_mitbih.h5")
 # In[95]:
 
 
-cropped_model = Model(model.input, model.layers[3].output)
-for i in range(3):
+cropped_model = Model(base_model.input, base_model.layers[2].output)
+for i in range(1, 4):
+    print(cropped_model.layers[i])
     cropped_model.layers[i].trainable = False
 
 
@@ -101,7 +100,8 @@ full_model.fit(X, Y, epochs=1000, verbose=1, callbacks=callbacks_list, validatio
 # In[ ]:
 
 
-for i in range(3):
+for i in range(1, 4):
+    print(full_model.layers[i])
     full_model.layers[i].trainable = True
 
 
