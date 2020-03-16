@@ -123,9 +123,9 @@ if sys.argv[1] == 'gru':
 elif sys.argv[1] == 'bilstm':
 	model = build_bilstm(n_class=5, 
 					  	 dropout=0.2, 
-					  	 rnn_sizes=[256, 256], 
-					  	 fc_sizes=[64, 32], 
-					  	 batch_norm=True)
+					  	 rnn_sizes=[128, 128, 128], 
+					  	 fc_sizes=[64], 
+					  	 batch_norm=False)
 else:
 	print("Invalid argument")
 	sys.exit()

@@ -1,3 +1,7 @@
+""" 
+A script to perform hyperparameter tuning of an RNN network on the PTB-DB dataset.
+"""
+
 import pandas as pd
 import numpy as np
 import os
@@ -6,8 +10,8 @@ from datetime import datetime
 from sklearn.model_selection import train_test_split
 import sklearn.decomposition as decomposition
 from sklearn.manifold import TSNE
-from sklearn.metrics import f1_score, accuracy_score, make_scorer, confusion_matrix
-from sklearn.utils.class_weight import compute_sample_weight
+from sklearn.metrics import make_scorer, f1_score, accuracy_score, roc_auc_score, precision_recall_curve, auc, confusion_matrix
+from sklearn.utils.class_weight import compute_class_weight
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import GridSearchCV
 
@@ -21,9 +25,11 @@ from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningR
 
 from metrics import f1_m
 
-df_train = pd.read_csv("data/mitbih_train.csv", header=None)
-df_train = df_train.sample(frac=1)
-df_test = pd.read_csv("data/mitbih_test.csv", header=None)
+df_1 = pd.read_csv(".../data/ptbdb_normal.csv", header=None)
+df_2 = pd.read_csv("../data/ptbdb_abnormal.csv", header=None)
+df = pd.concat([df_1, df_2])
+
+df_train, df_test = train_test_split(df, test_size=0.2, random_state=1337, stratify=df[187])
 
 Y = np.array(df_train[187].values).astype(np.int8)
 X = np.array(df_train[list(range(187))].values)[..., np.newaxis]
@@ -31,10 +37,9 @@ X = np.array(df_train[list(range(187))].values)[..., np.newaxis]
 Y_test = np.array(df_test[187].values).astype(np.int8)
 X_test = np.array(df_test[list(range(187))].values)[..., np.newaxis]
 
-n_class = np.unique(Y).size
+n_class = 1
 
 def build_gru(n_class=5, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], batch_norm=True):
-    nclass = 5
     model = Sequential()
     model.add(Input(shape=(187, 1)))
     
@@ -54,7 +59,7 @@ def build_gru(n_class=5, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], bat
         if batch_norm:
             model.add(BatchNormalization())
             
-    model.add(Dense(nclass, activation="softmax"))
+    model.add(Dense(n_class, activation="sigmoid"))
 
     return model
 
@@ -77,10 +82,12 @@ class CustomRNN(BaseEstimator):
         self.batch_norm = batch_norm
 
     def fit(self, train_X, train_y, **kwargs):
+
         tf.keras.backend.clear_session()
-        #early = EarlyStopping(monitor="val_loss", mode="min", patience=5, verbose=1)
+        self.class_weight = compute_class_weight('balanced', [0, 1], train_y)
+        early = EarlyStopping(monitor="val_loss", mode="min", patience=5, verbose=1)
         redonplat = ReduceLROnPlateau(monitor="val_loss", mode="min", patience=3, verbose=2)
-        callbacks_list = [redonplat]
+        callbacks_list = [early, redonplat]
         self.build_model()
 
         self.model.fit(train_X, train_y, validation_split=0.1, 
@@ -91,13 +98,14 @@ class CustomRNN(BaseEstimator):
     def predict(self, eval_X):
         return np.argmax(self.model.predict(eval_X), axis=1)
     
-    def set_params(self, epochs=100, 
+    def set_params(self, epochs=1, 
                          batch_size=64, 
                          learning_rate=1e-3, 
-                         dropout=0.3, 
+                         dropout=0.2, 
                          rnn_sizes=[128, 128],
                          fc_sizes=[64],
-                         batch_norm=True):
+                         batch_norm=True,
+                         balanced=True):
         self.epochs = epochs
         self.batch_size = batch_size
         self.learning_rate = learning_rate
@@ -105,6 +113,7 @@ class CustomRNN(BaseEstimator):
         self.rnn_sizes = rnn_sizes
         self.fc_sizes = fc_sizes
         self.batch_norm = batch_norm
+        self.balanced = balanced
                 
         return self
 
@@ -120,34 +129,32 @@ class CustomRNN(BaseEstimator):
         
     def build_model(self):
         print("Building model")
-        self.model = build_gru(n_class=5, dropout=self.dropout, 
+        self.model = build_gru(n_class=n_class, dropout=self.dropout, 
                           rnn_sizes=self.rnn_sizes, fc_sizes=self.fc_sizes, batch_norm=self.batch_norm)
         opt = optimizers.Adam(self.learning_rate)
-            
-        self.model.compile(optimizer=opt, 
-                      loss="sparse_categorical_crossentropy", 
-                      metrics=['accuracy'])
+        
+        if self.balanced:
+            self.model.compile(optimizer=opt, 
+                      loss="binary_crossentropy", 
+                      metrics=['accuracy'],
+                      class_weight = self.class_weight)
+        else:
+            self.model.compile(optimizer=opt, 
+                        loss="binary_crossentropy", 
+                        metrics=['accuracy'])
         #self.model.summary()       
 
 params = {
-    'epochs': [40],
+    'epochs': [100],
     'batch_size': [64],
     'learning_rate': [1e-3],
     'dropout': [0.2],
-    'rnn_sizes': [[128, 128], [256, 256, 128]],
-    'fc_sizes': [[64, 32]],
-    'batch_norm': [True, False]
+    'rnn_sizes': [[128, 128], [128, 128, 128]],
+    'fc_sizes': [[64], [64, 64]],
+    'batch_norm': [False],
+    'balanced': [True, False]
 }
 
-dummy_params = {
-    'epochs': [100],
-    'batch_size': [128],
-    'learning_rate': [1e-4],
-    'dropout': [0.2],
-    'rnn_sizes': [[128, 128, 64, 64], [128, 128, 128], [256, 256, 128]],
-    'fc_sizes': [[64], [64, 64]],
-    'batch_norm': [True]
-}
 
 model = CustomRNN()
 search = GridSearchCV(model, 
@@ -174,9 +181,11 @@ predicted_y = best_estimator.predict(X_test)
 print("TEST EVALUATION")
 print("F1-SCORE: ", f1_score(Y_test, predicted_y, average='macro'))
 print("ACCURACY: ", accuracy_score(Y_test, predicted_y))
+auc_roc = roc_auc_score(Y_test, predicted_y)
+print("AUROC score : %s "% acc)
+precision, recall, _ = precision_recall_curve(Y_test, predicted_y)
+auc_prc = auc(recall, precision)
+print("AUPRC score : %s "% auc_prc)
 print(confusion_matrix(Y_test, predicted_y))
 
 best_estimator.model.save(os.path.join(model_dir, str(datetime.now().strftime("%Y%m%d-%H%M%S"))))
-
-
-
