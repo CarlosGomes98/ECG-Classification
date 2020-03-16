@@ -44,6 +44,10 @@ print(np.unique(y_eval, return_counts=True))
 n_class = np.unique(Y).size
 
 def build_gru(n_class=5, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], batch_norm=True):
+    print("Building model...")
+    print("Rnn sizes: ", rnn_sizes)
+    print("Fc sizes: ", fc_sizes)
+    
     nclass = 5
     model = Sequential()
     model.add(Input(shape=(187, 1)))
@@ -113,9 +117,9 @@ class F1_Metric(tf.keras.callbacks.Callback):
 if sys.argv[1] == 'gru':
 	model = build_gru(n_class=5, 
 					  dropout=0.2, 
-					  rnn_sizes=[128, 128], 
-					  fc_sizes=[64, 64], 
-					  batch_norm=True)
+					  rnn_sizes=[128, 128, 128], 
+					  fc_sizes=[64], 
+					  batch_norm=False)
 elif sys.argv[1] == 'bilstm':
 	model = build_bilstm(n_class=5, 
 					  	 dropout=0.2, 
