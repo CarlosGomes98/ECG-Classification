@@ -127,7 +127,7 @@ print("Class weight: ", class_weight)
 
 model.fit(X_train[:, :, :], y_train[:], 
 		  validation_data=(X_eval, y_eval),
-		  epochs=2, 
+		  epochs=100, 
 		  batch_size=32,
 		  callbacks=[early,
                      redonplat],
