@@ -121,7 +121,7 @@ full_model.load_weights(file_path)
 # In[32]:
 
 
-pred_test = model.predict(X_test)
+pred_test = full_model.predict(X_test)
 pred_test = (pred_test>0.5).astype(np.int8)
 
 f1 = f1_score(Y_test, pred_test)
