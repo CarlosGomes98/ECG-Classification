@@ -143,7 +143,7 @@ redonplat = ReduceLROnPlateau(monitor="val_loss", mode="min", patience=3, verbos
 
 model.fit(X_train[:, :, :], y_train[:], 
 		  validation_data=(X_eval, y_eval),
-		  epochs=100, 
+		  epochs=7, 
 		  batch_size=32,
 		  callbacks=[F1_Metric(), 
                      tensorboard_callback,
@@ -154,6 +154,8 @@ model.fit(X_train[:, :, :], y_train[:],
 print("TEST EVALUATION")
 predicted_y = np.argmax(model.predict(X_test), axis=1)
 print("F1-SCORE: ", f1_score(Y_test, predicted_y, average='macro'))
+print(np.unique(predicted_y))
+print(np.unique(Y_test))
 print("ACCURACY: ", accuracy_score(Y_test, predicted_y))
 print(confusion_matrix(Y_test, predicted_y))
 

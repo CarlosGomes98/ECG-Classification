@@ -78,9 +78,9 @@ class CustomRNN(BaseEstimator):
 
     def fit(self, train_X, train_y, **kwargs):
         tf.keras.backend.clear_session()
-        early = EarlyStopping(monitor="val_loss", mode="min", patience=5, verbose=1)
+        #early = EarlyStopping(monitor="val_loss", mode="min", patience=5, verbose=1)
         redonplat = ReduceLROnPlateau(monitor="val_loss", mode="min", patience=3, verbose=2)
-        callbacks_list = [early, redonplat]
+        callbacks_list = [redonplat]
         self.build_model()
 
         self.model.fit(train_X, train_y, validation_split=0.1, 
@@ -130,13 +130,13 @@ class CustomRNN(BaseEstimator):
         #self.model.summary()       
 
 params = {
-    'epochs': [100],
+    'epochs': [40],
     'batch_size': [64],
     'learning_rate': [1e-3],
     'dropout': [0.2],
-    'rnn_sizes': [[128, 128], [256, 256, 128], [64, 64]],
-    'fc_sizes': [[64], [64, 32]],
-    'batch_norm': [True]
+    'rnn_sizes': [[128, 128], [256, 256, 128]],
+    'fc_sizes': [[64, 32]],
+    'batch_norm': [True, False]
 }
 
 dummy_params = {
