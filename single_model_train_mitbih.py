@@ -47,7 +47,7 @@ def build_gru(n_class=5, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], bat
     print("Building model...")
     print("Rnn sizes: ", rnn_sizes)
     print("Fc sizes: ", fc_sizes)
-    
+
     nclass = 5
     model = Sequential()
     model.add(Input(shape=(187, 1)))
@@ -147,7 +147,7 @@ redonplat = ReduceLROnPlateau(monitor="val_loss", mode="min", patience=3, verbos
 
 model.fit(X_train[:, :, :], y_train[:], 
 		  validation_data=(X_eval, y_eval),
-		  epochs=7, 
+		  epochs=100, 
 		  batch_size=32,
 		  callbacks=[F1_Metric(), 
                      tensorboard_callback,
