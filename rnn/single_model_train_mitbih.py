@@ -32,7 +32,7 @@ X_test = np.array(df_test[list(range(187))].values)[..., np.newaxis]
 
 X_train, X_eval, y_train, y_eval = train_test_split(X, Y,
                                                     stratify=Y, 
-                                                    test_size=0.15)
+                                                    test_size=0.1)
 
 print(X_train.shape, X_eval.shape)
 
