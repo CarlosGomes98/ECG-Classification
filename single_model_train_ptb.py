@@ -11,6 +11,7 @@ from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import f1_score, accuracy_score, roc_auc_score, precision_recall_curve, auc, confusion_matrix, make_scorer
+from sklearn.utils.class_weight import compute_class_weight
 
 import tensorflow as tf
 from tensorflow.keras import Model, Input, optimizers, losses
@@ -34,10 +35,12 @@ X_test = np.array(df_test[list(range(187))].values)[..., np.newaxis]
 
 X_train, X_eval, y_train, y_eval = train_test_split(X, Y,
                                                     stratify=Y, 
-                                                    test_size=0.15)
+                                                    test_size=0.1)
 
 print(X_train.shape, X_eval.shape)
-
+print(np.unique(y_train, return_counts=True))
+print(np.unique(y_eval, return_counts=True))
+print(np.unique(Y_test, return_counts=True))
 n_class = 1
 
 def build_gru(n_class=2, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], batch_norm=True):
@@ -90,14 +93,14 @@ def build_bilstm(n_class=2, dropout=0.3, rnn_sizes = [128, 128], fc_sizes=[64], 
 
 if sys.argv[1] == 'gru':
 	model = build_gru(n_class=n_class, 
-					  dropout=0.2, 
-					  rnn_sizes=[128, 128, 128], 
-					  fc_sizes=[64, 64], 
-					  batch_norm=True)
+					  dropout=0.0, 
+					  rnn_sizes=[64], 
+					  fc_sizes=[32], 
+					  batch_norm=False)
 elif sys.argv[1] == 'bilstm':
 	model = build_bilstm(n_class=n_class, 
 					  	 dropout=0.2, 
-					  	 rnn_sizes=[128, 128], 
+					  	 rnn_sizes=[256, 256], 
 					  	 fc_sizes=[64], 
 					  	 batch_norm=True)
 else:
@@ -106,10 +109,8 @@ else:
 
 opt = optimizers.Adam(1e-4)
 
-early = EarlyStopping(monitor="val_loss", mode="min", patience=5, verbose=1)
-redonplat = ReduceLROnPlateau(monitor="val_loss", mode="min", patience=3, verbose=2)
 model.compile(optimizer=opt, 
-	          loss='binary_crossentropy', 
+          loss='binary_crossentropy', 
 	          metrics=['accuracy'])
 
 logdir = os.path.join("logs", "scalars", str(datetime.now().strftime("%Y%m%d-%H%M%S")))
@@ -118,17 +119,24 @@ if not os.path.exists(logdir):
 #file_writer = tf.summary.create_file_writer(logdir + "/metrics")
 #file_writer.set_as_default()
 #tensorboard_callback = TensorBoard(log_dir=logdir)
-early = EarlyStopping(monitor="val_loss", mode="min", patience=5, verbose=1)
-redonplat = ReduceLROnPlateau(monitor="val_loss", mode="min", patience=3, verbose=2)
+early = EarlyStopping(monitor="loss", mode="min", patience=5, verbose=1)
+redonplat = ReduceLROnPlateau(monitor="loss", mode="min", patience=3, verbose=2)
 
-model.fit(X_train[:10000, :, :], y_train[:10000], 
+class_weight = compute_class_weight('balanced', [0, 1], y_train)
+print("Class weight: ", class_weight)
+
+model.fit(X_train[:, :, :], y_train[:], 
 		  validation_data=(X_eval, y_eval),
-		  epochs=5, 
-		  batch_size=16,
+		  epochs=2, 
+		  batch_size=32,
 		  callbacks=[early,
-                     redonplat])
+                     redonplat],
+         class_weight=class_weight)
 
-predicted_y = np.argmax(model.predict(X_test), axis=1)
+softmax_prediction = model.predict(X_test)
+predicted_y = np.array([softmax_prediction > 0.5]).astype(int).flatten()
+print(predicted_y.shape)
+print(Y_test.shape)
 print("TEST EVALUATION")
 print("F1-SCORE: ", f1_score(Y_test, predicted_y))
 print("ACCURACY: ", accuracy_score(Y_test, predicted_y))
