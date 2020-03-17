@@ -142,17 +142,16 @@ if not os.path.exists(logdir):
 file_writer = tf.summary.create_file_writer(logdir + "/metrics")
 file_writer.set_as_default()
 tensorboard_callback = TensorBoard(log_dir=logdir)
-early = EarlyStopping(monitor="val_loss", mode="min", patience=5, verbose=1)
-redonplat = ReduceLROnPlateau(monitor="val_loss", mode="min", patience=3, verbose=2)
+checkpoint = ModelCheckpoint('model.h5', monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
+early = EarlyStopping(monitor="val_accuracy", mode="max", patience=5, verbose=1)
+redonplat = ReduceLROnPlateau(monitor="val_accuracy", mode="max", patience=3, verbose=2)
+callbacks_list = [F1_Metric(), tensorboard_callback, checkpoint, early, redonplat]
 
 model.fit(X_train[:, :, :], y_train[:], 
 		  validation_data=(X_eval, y_eval),
 		  epochs=100, 
 		  batch_size=32,
-		  callbacks=[F1_Metric(), 
-                     tensorboard_callback,
-                     early,
-                     redonplat])
+		  callbacks=callbacks_list)
 
 
 print("TEST EVALUATION")
