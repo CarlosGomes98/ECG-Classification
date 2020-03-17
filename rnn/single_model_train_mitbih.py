@@ -18,6 +18,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.layers import LSTM, GRU, BatchNormalization, Bidirectional
 from tensorflow.keras.models import load_model
+from tensorflow.keras.utils import plot_model
 from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, ReduceLROnPlateau, TensorBoard
 
 df_train = pd.read_csv("../data/mitbih_train.csv", header=None)
@@ -117,15 +118,15 @@ class F1_Metric(tf.keras.callbacks.Callback):
 if sys.argv[1] == 'gru':
 	model = build_gru(n_class=5, 
 					  dropout=0.2, 
-					  rnn_sizes=[128, 128, 128], 
-					  fc_sizes=[64], 
-					  batch_norm=False)
+					  rnn_sizes=[256, 256, 128], 
+					  fc_sizes=[64, 32], 
+					  batch_norm=True)
 elif sys.argv[1] == 'bilstm':
 	model = build_bilstm(n_class=5, 
 					  	 dropout=0.2, 
-					  	 rnn_sizes=[128, 128, 128], 
+					  	 rnn_sizes=[256, 256], 
 					  	 fc_sizes=[64], 
-					  	 batch_norm=False)
+					  	 batch_norm=True)
 else:
 	print("Invalid argument")
 	sys.exit()
@@ -136,6 +137,7 @@ model.compile(optimizer=opt,
 		           loss="sparse_categorical_crossentropy", 
 		           metrics=['accuracy'])
 
+plot_model(model, to_file="gru_mitbih.png", show_shapes=True)
 logdir = os.path.join("logs", "scalars", str(datetime.now().strftime("%Y%m%d-%H%M%S")))
 if not os.path.exists(logdir):
 	os.makedirs(logdir)
