@@ -1,5 +1,7 @@
 data
 tasks.txt
+lsf*
 logs
-.ipynb_checkpoints
+models
 __pycache__
+.ipynb_checkpoints

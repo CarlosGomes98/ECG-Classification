@@ -1,17 +1,18 @@
 # from https://raw.githubusercontent.com/CVxTz/ECG_Heartbeat_Classification/master/code/baseline_ptbdb.py
-
+# Test f1 score : 0.9931100023758613 
+# Test accuracy score : 0.9900377877018207
 import pandas as pd
 import numpy as np
 
-from tf.keras import optimizers, losses, activations, models
-from tf.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, ReduceLROnPlateau
-from tf.keras.layers import Dense, Input, Dropout, Convolution1D, MaxPool1D, GlobalMaxPool1D, GlobalAveragePooling1D, \
+from tensorflow.keras import optimizers, losses, activations, models
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, LearningRateScheduler, ReduceLROnPlateau
+from tensorflow.keras.layers import Dense, Input, Dropout, Convolution1D, MaxPool1D, GlobalMaxPool1D, GlobalAveragePooling1D, \
     concatenate
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import train_test_split
 
-df_1 = pd.read_csv("data/ptbdb_normal.csv", header=None)
-df_2 = pd.read_csv("data/ptbdb_abnormal.csv", header=None)
+df_1 = pd.read_csv("../data/ptbdb_normal.csv", header=None)
+df_2 = pd.read_csv("../data/ptbdb_abnormal.csv", header=None)
 df = pd.concat([df_1, df_2])
 
 df_train, df_test = train_test_split(df, test_size=0.2, random_state=1337, stratify=df[187])
@@ -75,3 +76,14 @@ print("Test f1 score : %s "% f1)
 acc = accuracy_score(Y_test, pred_test)
 
 print("Test accuracy score : %s "% acc)
+
+auc_roc = roc_auc_score(Y_test, pred_test)
+
+print("AUROC score : %s "% acc)
+
+precision, recall, _ = precision_recall_curve(Y_test, pred_test)
+
+auc_prc = auc(recall, precision)
+print("AUPRC score : %s "% auc_prc)
+
+print(confusion_matrix(Y_test, pred_test))
