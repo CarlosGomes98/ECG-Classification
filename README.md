@@ -16,8 +16,12 @@ This repositiory contains the following approaches, which are easily accessible 
 
 Here are the initial results from our visualizations. These are pca and t-sne projections of the representations achieved by the baseline CNN.
 
-[Image goes here](img)
+PTBDB dataset
+![PTBDB dataset](images/pca_ptbdb.png)
+
+MITBIH dataset
+![MITHIB dataset](images/pca_mit.png)
 
 And here are comparisons from the representations achieved by each deep model:
 
-[Anotha one](img2)
+![Comparison](images/visualizations.png)
