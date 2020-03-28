@@ -14,6 +14,9 @@ This repositiory contains the following approaches, which are easily accessible 
 6. Transfer Learning from the larger dataset to the smaller one
 7. Ensemble method
 
+The results from our comparison of the approaches:
+![Results](images/comparisons_table.png)
+
 Here are the initial results from our visualizations. These are pca and t-sne projections of the representations achieved by the baseline CNN.
 
 PTBDB dataset
